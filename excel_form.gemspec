@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.version       = ExcelForm::VERSION
   spec.authors       = ["chenliang"]
   spec.email         = ["holdstock@yeah.net"]
-  spec.description   = %q{test how to upload gem}
+  spec.description   = %q{test how to upload gem 个人测试用}
   spec.summary       = %q{personal useage}
   spec.homepage      = ""
   spec.license       = "MIT"
