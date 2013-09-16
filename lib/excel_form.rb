@@ -1,38 +1,73 @@
-require "excel_form/version"
+#coding:utf-8
+require 'excel_form/version'
 
 module ExcelForm
-  def excel_test
-    javascript_tag do
-      raw <<JSCRIPT
-           //转换千分符
-    function cc(s) {
+  class Ef
+    attr_accessor :digit, :sum_arr
+
+    def initialize
+      @digit = 2
+      @sum_arr = []
+      @header = ''
+
+    end
+
+    def defaults_options
+
+    end
+
+    def decimal_digit(digit)
+      result =<<-DDJS
+        function cc(s) {
         if (/[^0-9\.]/.test(s)) return "";
         s = s.replace(/^(\d*)$/, "$1.");
-        s = (s + "000000").replace(/(\d*\.\d\d\d\d\d\d)\d*/, "$1");
+        s = (s + "#{'0'*digit}").replace(/(\d*\.#{'\d'*digit})\d*/, "$1");
         s = s.replace(".", ",");
         var re = /(\d)(\d{3},)/;
         while (re.test(s))
             s = s.replace(re, "$1,$2");
-        s = s.replace(/,(\d\d\d\d\d\d)$/, ".$1");
+        s = s.replace(/,(#{'\d'*digit})$/, ".$1");
         return s.replace(/^\./, "0.")
-    }
-    //验证
+        }
+      DDJS
+    end
+
+    def sum_validate(arr)
+      result =<<-SVJS
     function FieldValidator(value) {
         if (isNaN(value)) {
-//            if (value == null || value == undefined || !value.length) {
-//            alert("只能输入数字！");
             return {valid: false, msg: "只能输入数字！"};
         } else {
             if (data[1][1] != (parseFloat(data[2][1]) + parseFloat(data[3][1]))) {
-//                alert("营业收入应该为主营业务收入和其他业务收入之和！");
-//                $(grid.getCellNode(1, 1)).popover('toggle');
                 return {valid: true, msg: "营业收入应该为主营业务收入和其他业务收入之和！"};
             }
 
             return {valid: true, msg: null};
         }
     }
+      SVJS
+    end
 
+    def generate_header(headers)
+      result = ''
+      headers.each do |h|
+        i = headers.index(h)
+        result << "columns.push({id: #{i},name: #{h},field: #{i},width: 100,editor: FormulaEditor,sortable: false,asyncPostRender: formatThousandChar,validator: FieldValidator});"
+      end
+      result
+    end
+
+    def auto_complete
+
+    end
+
+
+    def generate_form(digit, sum_arr, headers)
+      result =<<JSCRIPT
+        //转换千分符
+    #{decimal_digit(digit)}
+    //验证
+    #{sum_validate(sum_arr)}
 
     //grid
     var grid;
@@ -55,74 +90,9 @@ module ExcelForm
         }
     };
     //标题
-    var columns = [
-//        {
-//            id: "selector",
-//            name: "",
-//            field: "num",
-//            width: 30
-//        }
-    ];
-    //    data.getItemMetadata = function (row) {
-    //        if (row === 0) {
-    //            return {
-    //                "columns": {
-    //                    0: {
-    //                        "colspan": "*"
-    //                    }
-    //                }
-    //            };
-    //        } else {
-    //            return {
-    //                "columns": {
-    //                    "duration": {
-    //                        "colspan": 3
-    //                    }
-    //                }
-    //            };
-    //        }
-    //    }
-    for (var i = 0; i < 6; i++) {
-        var arr = '<%= @header %>'.split(',');
-        if (i % 3 == 0) {
-            columns.push({
-                id: i,
-                name: arr[i],
-                field: i,
-                width: 270,
-                editor: false,
-                sortable: false,
-                cssClass: "cell-title"
-            });
+    var columns = [];
+    #{generate_header(headers)}
 
-        }
-
-        else {
-            columns.push({
-                id: i,
-                name: arr[i],
-                field: i,
-                width: 130,
-                editor: FormulaEditor,
-                sortable: false,
-                asyncPostRender: formatThousandChar,
-                validator: FieldValidator
-            });
-
-        }
-//        columns.push({
-//            id: i,
-//            name: String.fromCharCode("b".charCodeAt(0) + (i / 26) | 0) +
-//                    String.fromCharCode("b".charCodeAt(0) + (i % 26)),
-//            field: i,
-//            width: 60,
-//            editor: FormulaEditor
-//        });
-    }
-
-    /***
-     * A proof-of-concept cell editor with Excel-like range selection and insertion.
-     */
     function FormulaEditor(args) {
         var _self = this;
         var _editor = new Slick.Editors.Text(args);
@@ -163,6 +133,7 @@ module ExcelForm
 
     function formatThousandChar() {
         //自动填充
+        #{auto_complete}
         var val1 = data[1][columns[1].field] || '0';
         var val2 = data[2][columns[1].field] || '0';
         var val3 = data[3][columns[1].field] || '0';
@@ -182,10 +153,6 @@ module ExcelForm
                     if (!isNaN(val) && val != 0) {
                         grid.getCellNode(i, j).innerHTML = cc(val);
                     }
-//                    console.log(grid.getCellNode(i,j).className);
-//                    else {
-//                        grid.getCellNode(i, j).innerHTML = '';
-//                    }
                 }
             }
         }
@@ -216,13 +183,6 @@ module ExcelForm
 
     }
 
-//        jQuery.getJSON('http://localhost:3000/sam/work_cards/demo', function(aa) {
-//            for (var i=0;i<2;i++){
-//                console.log(aa[i]);
-//            }
-//            console.log(aa);
-//        });
-
     $(function () {
         var str = '<%= @struct_data %>';
         var arr = str.split('@');
@@ -245,11 +205,6 @@ module ExcelForm
             //
             var activeCellNode = args.cellNode;
             $(activeCellNode).attr("title", '');
-//            console.log(args);
-//            console.log(args.item[1]);
-//            grid.invalidateRow(args.row);
-//            grid.invalidateRow(args.cell);
-//            grid.render();
         });
 
         grid.setSelectionModel(new Slick.CellSelectionModel());
@@ -285,18 +240,9 @@ module ExcelForm
             grid.render();
         });
 
-//                    grid.onAddNewRow.subscribe(function (e, args) {
-//                        var item = args.item;
-//                        var column = args.column;
-//                        grid.invalidateRow(data.length);
-//                        data.push(item);
-//                        grid.updateRowCount();
-//                        grid.render();
-//                    });
         var handleValidationError = function (e, args) {
             var validationResult = args.validationResults;
             var activeCellNode = args.cellNode;
-//            var editor = args.editor;
             var errorMessage = validationResult.msg
             var valid_result = validationResult.valid;
             if (!valid_result) {
@@ -322,13 +268,6 @@ module ExcelForm
         }
 
         grid.onValidationError.subscribe(handleValidationError);
-//        grid.onBeforeCellEditorDestroy.subscribe(destroyTip);
-
-
-//        $("form").submit(
-//                function () {
-//                }
-//        );
 
     })
     function hasClass(ele,cls) {
@@ -364,5 +303,7 @@ module ExcelForm
 
 JSCRIPT
     end
+
   end
+
 end
