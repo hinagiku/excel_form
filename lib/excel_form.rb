@@ -59,12 +59,29 @@ module ExcelForm
       result
     end
 
-    def auto_complete
+    def auto_complete(arr)
+      arr.each_key do |key|
+        arr[key].each do |value|
 
+        end
+      end
+
+      result =<<ACJS
+        var val1 = data[1][columns[1].field] || '0';
+        var val2 = data[2][columns[1].field] || '0';
+        var val3 = data[3][columns[1].field] || '0';
+        var val4 = data[4][columns[1].field] || '0';
+        var val5 = data[5][columns[1].field] || '0';
+        var val6 = data[6][columns[1].field] || '0';
+        var val = parseFloat(val1) + parseFloat(val2) + parseFloat(val3) + parseFloat(val4) + parseFloat(val5) + parseFloat(val6);
+        //innerHTML只能改变页面显示，不能改变data实际的值
+        grid.getCellNode(0, 1).innerHTML = val;
+ACJS
+      result
     end
 
 
-    def generate_form(digit, sum_arr, headers)
+    def generate_form(digit, sum_arr, headers, auto_complete)
       result =<<JSCRIPT
         //转换千分符
     #{decimal_digit(digit)}
@@ -135,16 +152,7 @@ module ExcelForm
 
     function formatThousandChar() {
         //自动填充
-        #{auto_complete}
-        var val1 = data[1][columns[1].field] || '0';
-        var val2 = data[2][columns[1].field] || '0';
-        var val3 = data[3][columns[1].field] || '0';
-        var val4 = data[4][columns[1].field] || '0';
-        var val5 = data[5][columns[1].field] || '0';
-        var val6 = data[6][columns[1].field] || '0';
-        var val = parseFloat(val1) + parseFloat(val2) + parseFloat(val3) + parseFloat(val4) + parseFloat(val5) + parseFloat(val6);
-        //innerHTML只能改变页面显示，不能改变data实际的值
-        grid.getCellNode(0, 1).innerHTML = val;
+        #{auto_complete(auto_complete)}
 
         //调用转换千分符
         for (var i = 0; i < 100; i++) {
@@ -304,6 +312,7 @@ module ExcelForm
     }
 
 JSCRIPT
+      result
     end
 
   end
