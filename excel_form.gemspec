@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
   s.version     = ExcelForm::VERSION
   s.authors     = %w{hayatecn}
   s.email       = %w{holdstock@yeah.net}
-  s.homepage    = 'www.baidu.com'
+  s.homepage    = ''
   s.summary     = 'learn how to generate gem.'
   s.description = 'test.'
 
