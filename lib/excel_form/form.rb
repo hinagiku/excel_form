@@ -73,6 +73,14 @@ def demo
   @column1 = '流动资产：,货币资金,△结算备付金'
   @column2 = '流动负债：,短期借款,△向中央银行借款'
   @aa = %w(1,2)
+  @ef = ExcelForm::Ef.new
+  @ef.headers = @header
+  @ef.struct_data = @struct_data
+  @ef.digit = 2
+  @ef.sum_arr = [[7,[13, 19]]]
+  @ef.auto_complete = [[1,[7,13,19,25,31,37]]]
+  p @ef
+
   respond_to { |format|
     format.html
     format.json { render :json => @aa }
